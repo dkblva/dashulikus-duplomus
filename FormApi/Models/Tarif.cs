@@ -7,9 +7,9 @@ public class Tarif //тарифы работы
 {
     public Guid Id { get; set; } //код тарифа работы
 
-    public string Name { get; set; } //наименование тарифа
+    public string Name { get; set; } = null!; //наименование тарифа
 
-    public string Description { get; set; } //описание тарифа
+    public string Description { get; set; } = null!; //описание тарифа
 
     public int Price { get; set; } //стоимость тарифа
 }

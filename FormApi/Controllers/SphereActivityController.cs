@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using FormApi.Data;
 using FormApi.Models;
+using FormApi.Dtos.SphereActivity;
 
 namespace FormApi.Controllers
 {
@@ -17,42 +18,43 @@ namespace FormApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SphereActivity>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ReadSphereActivityDto>>> GetAll()
         {
-            return await _context.SphereActivities.ToListAsync();
+            var list = await _context.SphereActivities
+                .Select(s => new ReadSphereActivityDto { Id = s.Id, NameSphere = s.NameSphere })
+                .ToListAsync();
+            return list;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<SphereActivity>> GetById(Guid id)
+        public async Task<ActionResult<ReadSphereActivityDto>> GetById(Guid id)
         {
-            var item = await _context.SphereActivities.FindAsync(id);
-
-            if (item == null)
+            var s = await _context.SphereActivities.FindAsync(id);
+            if (s == null)
                 return NotFound();
-
-            return item;
+            return new ReadSphereActivityDto { Id = s.Id, NameSphere = s.NameSphere };
         }
 
         [HttpPost]
-        public async Task<ActionResult<SphereActivity>> Create(SphereActivity item)
+        public async Task<ActionResult<ReadSphereActivityDto>> Create(CreateSphereActivityDto dto)
         {
-            item.Id = Guid.NewGuid();
-
-            _context.SphereActivities.Add(item);
+            var sphere = new SphereActivity
+            {
+                Id = Guid.NewGuid(),
+                NameSphere = dto.NameSphere
+            };
+            _context.SphereActivities.Add(sphere);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+            return CreatedAtAction(nameof(GetById), new { id = sphere.Id }, new ReadSphereActivityDto { Id = sphere.Id, NameSphere = sphere.NameSphere });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, SphereActivity item)
+        public async Task<IActionResult> Update(Guid id, UpdateSphereActivityDto dto)
         {
-            if (id != item.Id)
-                return BadRequest();
-
-            _context.Entry(item).State = EntityState.Modified;
+            var sphere = await _context.SphereActivities.FindAsync(id);
+            if (sphere == null) return NotFound();
+            sphere.NameSphere = dto.NameSphere;
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 

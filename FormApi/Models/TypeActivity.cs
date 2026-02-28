@@ -7,6 +7,6 @@ namespace FormApi.Models
     {
         public Guid Id { get; set; } // код вида деятельности
 
-        public string NameType { get; set; } //наименование
+        public string NameType { get; set; } = null!; //наименование
     }
 }

@@ -7,12 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseSqlServer(
-        "Server=(LocalDB)\\MSSQLLocalDB;Database=FormDB;Trusted_Connection=True;TrustServerCertificate=True;"
+        "Server=KOMPUTER;Database=FormDB;Trusted_Connection=True;TrustServerCertificate=True;"
     ));
 
 
 // ✅ Подключаем контроллеры
 builder.Services.AddControllers();
+
+// ✅ Swagger/OpenAPI (Swashbuckle)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // ✅ CORS (чтобы сайт мог обращаться к API)
 builder.Services.AddCors(options =>
@@ -30,6 +34,17 @@ app.UseHttpsRedirection();
 
 // ✅ Включаем CORS
 app.UseCors("AllowAll");
+
+// ✅ Swagger middleware
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "FormApi v1");
+        options.RoutePrefix = string.Empty; // serve at root if desired
+    });
+}
 
 // ✅ Подключаем маршруты контроллеров
 app.MapControllers();

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using FormApi.Data;
 using FormApi.Models;
+using FormApi.Dtos.Solution;
 
 namespace FormApi.Controllers
 {
@@ -17,40 +18,87 @@ namespace FormApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Solution>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ReadSolutionDto>>> GetAll()
         {
-            return await _context.Solutions.ToListAsync();
+            var list = await _context.Solutions
+                .Select(s => new ReadSolutionDto
+                {
+                    Id = s.Id,
+                    Description = s.Description,
+                    IdApplication = s.IdApplication,
+                    IdTarif = s.IdTarif
+                })
+                .ToListAsync();
+            return list;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Solution>> GetById(Guid id)
+        public async Task<ActionResult<ReadSolutionDto>> GetById(Guid id)
         {
-            var solution = await _context.Solutions.FindAsync(id);
+            var s = await _context.Solutions.FindAsync(id);
 
-            if (solution == null)
+            if (s == null)
                 return NotFound();
 
-            return solution;
+            return new ReadSolutionDto
+            {
+                Id = s.Id,
+                Description = s.Description,
+                IdApplication = s.IdApplication,
+                IdTarif = s.IdTarif
+            };
         }
 
         [HttpPost]
-        public async Task<ActionResult<Solution>> Create(Solution solution)
+        public async Task<ActionResult<ReadSolutionDto>> Create(CreateSolutionDto dto)
         {
-            solution.Id = Guid.NewGuid(); // если Id не генерируется автоматически
+            // validate foreign keys
+            var appExists = await _context.Applications.AnyAsync(a => a.Id == dto.IdApplication);
+            if (!appExists)
+                return BadRequest("Referenced application does not exist.");
+            var tarifExists = await _context.Tarifs.AnyAsync(t => t.Id == dto.IdTarif);
+            if (!tarifExists)
+                return BadRequest("Referenced tarif does not exist.");
+
+            var solution = new Solution
+            {
+                Id = Guid.NewGuid(),
+                Description = dto.Description,
+                IdApplication = dto.IdApplication,
+                IdTarif = dto.IdTarif
+            };
 
             _context.Solutions.Add(solution);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = solution.Id }, solution);
+            return CreatedAtAction(nameof(GetById), new { id = solution.Id }, new ReadSolutionDto
+            {
+                Id = solution.Id,
+                Description = solution.Description,
+                IdApplication = solution.IdApplication,
+                IdTarif = solution.IdTarif
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, Solution solution)
+        public async Task<IActionResult> Update(Guid id, UpdateSolutionDto dto)
         {
-            if (id != solution.Id)
-                return BadRequest();
+            var solution = await _context.Solutions.FindAsync(id);
+            if (solution == null)
+                return NotFound();
 
-            _context.Entry(solution).State = EntityState.Modified;
+            // validate related ids
+            var appExists = await _context.Applications.AnyAsync(a => a.Id == dto.IdApplication);
+            if (!appExists)
+                return BadRequest("Referenced application does not exist.");
+            var tarifExists = await _context.Tarifs.AnyAsync(t => t.Id == dto.IdTarif);
+            if (!tarifExists)
+                return BadRequest("Referenced tarif does not exist.");
+
+            solution.Description = dto.Description;
+            solution.IdApplication = dto.IdApplication;
+            solution.IdTarif = dto.IdTarif;
+
             await _context.SaveChangesAsync();
 
             return NoContent();

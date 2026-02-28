@@ -7,6 +7,6 @@ namespace FormApi.Models
     {
         public Guid Id { get; set; } //код сферы деятельности
 
-        public string NameSphere { get; set; } //наименование
+        public string NameSphere { get; set; } = null!; //наименование
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using FormApi.Data;
 using FormApi.Models;
+using FormApi.Dtos.TypeActivity;
 
 namespace FormApi.Controllers
 {
@@ -17,42 +18,38 @@ namespace FormApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TypeActivity>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ReadTypeActivityDto>>> GetAll()
         {
-            return await _context.TypeActivities.ToListAsync();
+            var list = await _context.TypeActivities
+                .Select(t => new ReadTypeActivityDto { Id = t.Id, NameType = t.NameType })
+                .ToListAsync();
+            return list;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TypeActivity>> GetById(Guid id)
+        public async Task<ActionResult<ReadTypeActivityDto>> GetById(Guid id)
         {
-            var item = await _context.TypeActivities.FindAsync(id);
-
-            if (item == null)
-                return NotFound();
-
-            return item;
+            var t = await _context.TypeActivities.FindAsync(id);
+            if (t == null) return NotFound();
+            return new ReadTypeActivityDto { Id = t.Id, NameType = t.NameType };
         }
 
         [HttpPost]
-        public async Task<ActionResult<TypeActivity>> Create(TypeActivity item)
+        public async Task<ActionResult<ReadTypeActivityDto>> Create(CreateTypeActivityDto dto)
         {
-            item.Id = Guid.NewGuid();
-
-            _context.TypeActivities.Add(item);
+            var type = new TypeActivity { Id = Guid.NewGuid(), NameType = dto.NameType };
+            _context.TypeActivities.Add(type);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+            return CreatedAtAction(nameof(GetById), new { id = type.Id }, new ReadTypeActivityDto { Id = type.Id, NameType = type.NameType });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, TypeActivity item)
+        public async Task<IActionResult> Update(Guid id, UpdateTypeActivityDto dto)
         {
-            if (id != item.Id)
-                return BadRequest();
-
-            _context.Entry(item).State = EntityState.Modified;
+            var type = await _context.TypeActivities.FindAsync(id);
+            if (type == null) return NotFound();
+            type.NameType = dto.NameType;
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 

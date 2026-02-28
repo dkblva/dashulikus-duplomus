@@ -8,7 +8,7 @@ public class Application //заявки основная рабочая табл
     public Guid Id { get; set; } //код заявки
 
     [Required(ErrorMessage = "ФИО обязательно для заполнения")]
-    public string FullName { get; set; } //ФИО клиента
+    public string FullName { get; set; } = null!; //ФИО клиента
     public string? PhoneNumber { get; set; } // номер телефона клиента
     public string? Email { get; set; } //эл.почта клиента
     public string? OrganizationName { get; set; } //наименование организации клиента

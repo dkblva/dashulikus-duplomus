@@ -1,9 +1,10 @@
 ﻿using FormApi.Models;
-
+using System.ComponentModel.DataAnnotations;
 namespace FormApi.Dtos.SphereActivity
 {
     public class CreateSphereActivityDto
     {
-        public string NameSphere { get; set; } //наименование
+        [Required]
+    public string NameSphere { get; set; } = null!; //наименование
     }
 }
