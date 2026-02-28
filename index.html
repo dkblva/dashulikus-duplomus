@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Форма заявки</title>
+
+		<style>
+			body {
+				margin: 0;
+				height: 100vh;
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				font-family: Arial, sans-serif;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.card {
+				background: #fff;
+				padding: 40px;
+				width: 320px;
+				border-radius: 12px;
+				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+				text-align: center;
+			}
+
+			h2 {
+				margin-bottom: 25px;
+			}
+
+			input {
+				width: 100%;
+				padding: 12px;
+				margin-bottom: 15px;
+				border-radius: 6px;
+				border: 1px solid #ccc;
+				font-size: 14px;
+			}
+
+			button {
+				width: 100%;
+				padding: 12px;
+				background: #667eea;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 16px;
+				cursor: pointer;
+				transition: 0.2s;
+			}
+
+			button:disabled {
+				background: #aaa;
+				cursor: not-allowed;
+			}
+
+			.status {
+				margin-top: 15px;
+				font-size: 14px;
+			}
+
+			.success {
+				color: green;
+			}
+			.error {
+				color: red;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="card">
+			<h2>📨 Оставить заявку</h2>
+
+			<input id="name" placeholder="Ваше имя" />
+			<input id="phone" placeholder="+7 (___) ___-__-__" />
+
+			<button id="btn" onclick="send()">Отправить</button>
+
+			<div id="status" class="status"></div>
+		</div>
+
+		<script>
+			const phoneInput = document.getElementById('phone')
+			const btn = document.getElementById('btn')
+			const status = document.getElementById('status')
+
+			// Маска телефона
+			phoneInput.addEventListener('input', () => {
+				let x = phoneInput.value.replace(/\D/g, '').substring(0, 11)
+
+				if (!x.startsWith('7')) x = '7' + x
+
+				let formatted = '+7'
+
+				if (x.length > 1) formatted += ' (' + x.substring(1, 4)
+				if (x.length >= 5) formatted += ') ' + x.substring(4, 7)
+				if (x.length >= 8) formatted += '-' + x.substring(7, 9)
+				if (x.length >= 10) formatted += '-' + x.substring(9, 11)
+
+				phoneInput.value = formatted
+			})
+
+			// Отправка по Enter
+			document.addEventListener('keydown', e => {
+				if (e.key === 'Enter') send()
+			})
+
+			async function send() {
+				const name = document.getElementById('name').value.trim()
+				const phone = phoneInput.value.trim()
+
+				status.textContent = ''
+				status.className = 'status'
+
+				if (!name || phone.length < 18) {
+					status.textContent = '⚠️ Введите корректные данные'
+					status.classList.add('error')
+					return
+				}
+
+				btn.disabled = true
+				btn.textContent = 'Отправка...'
+
+				try {
+					const response = await fetch('http://localhost:5209/api/form', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ name, phone }),
+					})
+
+					if (response.ok) {
+						status.textContent = '✅ Заявка отправлена!'
+						status.classList.add('success')
+						document.getElementById('name').value = ''
+						phoneInput.value = ''
+					} else {
+						status.textContent = '❌ Ошибка сервера'
+						status.classList.add('error')
+					}
+				} catch {
+					status.textContent = '❌ Сервер недоступен'
+					status.classList.add('error')
+				}
+
+				btn.disabled = false
+				btn.textContent = 'Отправить'
+			}
+		</script>
+	</body>
+</html>
