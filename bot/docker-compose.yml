@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  admin-bot:
+    build: .
+    container_name: telegram-admin-bot
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+      - API_BASE_URL=${API_BASE_URL:-http://api:5000}
+      - API_TIMEOUT=10
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      - api
+    volumes:
+      - ./notification_history.json:/app/notification_history.json
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  api:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: formapi
+    environment:
+      - Connection__DefaultConnection=Server=db;Database=FormDB;User Id=sa;Password=${SA_PASSWORD:-P@ssw0rd123!};TrustServerCertificate=True;
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    volumes:
+      - ./FormApi/bin:/app/bin
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/swagger"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: formdb
+    environment:
+      - SA_PASSWORD=${SA_PASSWORD:-P@ssw0rd123!}
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    volumes:
+      - db-data:/var/opt/mssql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
